@@ -1,0 +1,39 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# WXT / build outputs
+.wxt
+.output
+dist
+web-ext-artifacts
+*.zip
+
+# generated icons (regenerated on build via scripts/generate-icons.mjs)
+public/icon/*.png
+
+# secrets & local env
+.env
+.env.*
+!.env.example
+
+# editors / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# logs / coverage / typescript build info
+*.log
+coverage
+*.tsbuildinfo
+
+# private notes / scratch
+.afn
+.planning
+.claude
+notes.local.md
+TODO.local.md
+
+# private design notes (kept local, not published)
+docs/

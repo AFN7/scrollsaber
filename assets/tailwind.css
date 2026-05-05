@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Only the full-page contexts (popup.html / options.html) get the dark
+     surface; content-script shadow roots must stay transparent so the host
+     page's layout isn't covered. */
+  html,
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: hsl(240 10% 4%);
+    color: hsl(240 6% 95%);
+    color-scheme: dark;
+    margin: 0;
+  }
+
+  .scrollsaber-root {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color-scheme: dark;
+  }
+}
+
+@layer components {
+  .saber-line {
+    @apply h-[2px] origin-left bg-gradient-to-r from-transparent via-primary to-transparent;
+  }
+}
