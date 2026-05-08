@@ -2,7 +2,15 @@
 
 > Cut the scroll. Not the point.
 
-[**Install from Chrome Web Store →**](https://chromewebstore.google.com/detail/scrollsaber/lfmlkjabnmgbojbhdhnddlbjdppjbeoo)
+<p align="center">
+  <img src="store-assets/scrollsaber-demo.gif" alt="Scrollsaber TL;DR demo on a long LinkedIn post" width="580">
+</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/scrollsaber/lfmlkjabnmgbojbhdhnddlbjdppjbeoo">
+    <strong>Install from Chrome Web Store →</strong>
+  </a>
+</p>
 
 A Chrome extension (MV3) that shortens long LinkedIn posts without losing meaning. You write → click the saber button → pick a length on the slider (75% / 50% / 25% / single sentence) → apply. Runs fully client-side via your own LLM API key. No backend. No tracking.
 
