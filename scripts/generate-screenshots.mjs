@@ -5,7 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
-const srcDir = '/mnt/c/Users/LazyDev4FN7/Desktop/scrollsaber-store';
+// Where the raw Snipping Tool / OS screenshots live. Override with
+// `SCROLLSABER_RAW_SCREENSHOTS=/path/to/dir node scripts/generate-screenshots.mjs`
+// when running outside this checkout.
+const srcDir = process.env.SCROLLSABER_RAW_SCREENSHOTS ?? resolve(root, 'screenshots-raw');
 const outDir = resolve(root, 'store-assets/screenshots');
 
 await mkdir(outDir, { recursive: true });
