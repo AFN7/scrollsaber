@@ -37,6 +37,7 @@ TODO.local.md
 
 # private design notes (kept local, not published)
 docs/
+scripts/
 
 # store assets are regenerated via scripts/generate-store-assets.mjs;
 # only the README hero GIF is tracked (it's the demo preview).
