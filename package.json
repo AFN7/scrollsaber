@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "author": "Afan Selçuk <afanselcuk@gmail.com>",
+  "author": "Afan Selçuk",
   "description": "Chrome extension that shortens long LinkedIn posts with your own LLM key (Gemini or any OpenAI-compatible API).",
   "repository": {
     "type": "git",

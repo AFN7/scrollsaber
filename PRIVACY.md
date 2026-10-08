@@ -2,7 +2,7 @@
 
 **Effective date:** 2026-05-05
 **Extension:** Scrollsaber (Chrome MV3)
-**Maintainer:** Afan Selçuk — <afanselcuk@gmail.com>
+**Maintainer:** Afan Selçuk
 
 Scrollsaber is a Chrome extension that shortens LinkedIn posts using an LLM API key the user provides. There is no backend operated by the maintainer.
 
@@ -51,6 +51,5 @@ If this policy changes, the updated version will be committed to the public sour
 
 ## Contact
 
-- Email: afanselcuk@gmail.com
 - Issues: <https://github.com/AFN7/scrollsaber/issues>
 - Source code: <https://github.com/AFN7/scrollsaber>
