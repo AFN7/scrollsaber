@@ -1,7 +1,8 @@
 import { storage } from 'wxt/storage';
-import type { Settings } from '@/lib/types';
+import type { Provider, Settings } from '@/lib/types';
 import { DEFAULT_DAILY_CREDIT_CAP } from '@/lib/credits/policy';
-import { OPENAI_PRESETS } from '@/lib/llm/presets';
+import { OPENAI_PRESETS, RETIRED_PRESET_MODELS } from '@/lib/llm/presets';
+import { DEFAULT_GEMINI_MODEL } from '@/lib/llm/models';
 
 const SETTINGS_KEY = 'local:settings' as const;
 
@@ -10,6 +11,7 @@ const GROQ_PRESET = OPENAI_PRESETS.find((p) => p.id === 'groq')!;
 export const DEFAULT_SETTINGS: Settings = {
   provider: 'gemini',
   geminiApiKey: '',
+  geminiModel: DEFAULT_GEMINI_MODEL,
   openaiBaseUrl: GROQ_PRESET.baseUrl,
   openaiApiKey: '',
   openaiModel: GROQ_PRESET.defaultModel,
@@ -50,9 +52,21 @@ const settingsItem = storage.defineItem<Settings>(SETTINGS_KEY, {
   },
 });
 
+/**
+ * Fill fields added after the stored copy was written, and move preset
+ * default models the provider has since retired onto the preset's current
+ * default. A model the user typed by hand is never touched.
+ */
+function normalize(value: Partial<Settings> | null | undefined): Settings {
+  const s: Settings = { ...DEFAULT_SETTINGS, ...(value ?? {}) };
+  if (!s.geminiModel.trim()) s.geminiModel = DEFAULT_GEMINI_MODEL;
+  const replacement = RETIRED_PRESET_MODELS[`${s.openaiPreset}:${s.openaiModel}`];
+  if (replacement) s.openaiModel = replacement;
+  return s;
+}
+
 export async function getSettings(): Promise<Settings> {
-  const value = await settingsItem.getValue();
-  return { ...DEFAULT_SETTINGS, ...value };
+  return normalize(await settingsItem.getValue());
 }
 
 export async function setSettings(partial: Partial<Settings>): Promise<Settings> {
@@ -63,10 +77,23 @@ export async function setSettings(partial: Partial<Settings>): Promise<Settings>
 }
 
 export function watchSettings(cb: (s: Settings) => void): () => void {
-  return settingsItem.watch((value) => cb({ ...DEFAULT_SETTINGS, ...value }));
+  return settingsItem.watch((value) => cb(normalize(value)));
+}
+
+/** A provider is usable once it has a key and, for OpenAI-compatible, a URL and model. */
+export function providerReady(s: Settings, p: Provider): boolean {
+  if (p === 'gemini') return s.geminiApiKey.trim().length > 0;
+  return (
+    s.openaiApiKey.trim().length > 0 &&
+    s.openaiBaseUrl.trim().length > 0 &&
+    s.openaiModel.trim().length > 0
+  );
 }
 
 export function hasApiKey(s: Settings): boolean {
-  if (s.provider === 'gemini') return s.geminiApiKey.trim().length > 0;
-  return s.openaiBaseUrl.trim().length > 0 && s.openaiModel.trim().length > 0;
+  return providerReady(s, s.provider);
+}
+
+export function activeModel(s: Settings, p: Provider = s.provider): string {
+  return p === 'gemini' ? s.geminiModel.trim() || DEFAULT_GEMINI_MODEL : s.openaiModel.trim();
 }

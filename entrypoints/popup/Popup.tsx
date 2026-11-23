@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Swords, Settings as SettingsIcon, Timer, Coins, Gauge } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getStats, rolloverWindows, remainingDailyCredits } from '@/lib/storage/stats';
-import { getSettings, hasApiKey } from '@/lib/storage/settings';
+import { activeModel, getSettings, hasApiKey } from '@/lib/storage/settings';
 import { formatDuration } from '@/lib/time/calculator';
 import type { Settings, Stats } from '@/lib/types';
 
@@ -54,8 +54,12 @@ export function Popup() {
       <header className="flex items-center gap-2">
         <Swords className="h-5 w-5 text-primary" />
         <h1 className="text-base font-semibold">Scrollsaber</h1>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {settings.provider === 'gemini' ? 'Gemini' : 'OpenAI-compat'}
+        <span
+          className="ml-auto min-w-0 truncate text-right text-xs text-muted-foreground"
+          title={activeModel(settings)}
+        >
+          {settings.provider === 'gemini' ? 'Gemini' : 'OpenAI-compat'} ·{' '}
+          <span className="font-mono">{activeModel(settings) || 'no model'}</span>
         </span>
       </header>
 

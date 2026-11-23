@@ -479,7 +479,8 @@ function SetupPrompt({
         <DialogHeader>
           <DialogTitle>Set up your API key</DialogTitle>
           <DialogDescription>
-            Scrollsaber uses your own {provider === 'gemini' ? 'Gemini' : 'Groq'} API key.
+            Scrollsaber uses your own{' '}
+            {provider === 'gemini' ? 'Gemini' : 'OpenAI-compatible provider'} API key.
             Add it once, then shorten away.
           </DialogDescription>
         </DialogHeader>
@@ -488,8 +489,8 @@ function SetupPrompt({
             type="button"
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             onClick={() => {
-              browser.runtime.sendMessage({ type: 'open-options' }).catch(() => {
-                browser.runtime.openOptionsPage();
+              browser.runtime.sendMessage({ type: 'open-options' }).catch((e: unknown) => {
+                err('could not open Settings', e);
               });
             }}
           >

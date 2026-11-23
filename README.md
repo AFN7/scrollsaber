@@ -29,15 +29,17 @@ It also adds a TL;DR bar above long feed posts so you can skim before committing
 
 Pick one in Settings:
 
-- **Google Gemini** — native API (free tier)
-- **OpenAI-compatible** — any base URL with `/chat/completions`. Built-in presets:
-  - Groq · Llama 3.3 70B
-  - OpenRouter (100+ models, free + paid)
-  - DeepSeek
-  - Cerebras
+- **Google Gemini**: native API (free tier). Default model `gemini-2.5-flash-lite`.
+- **OpenAI-compatible**: any base URL with `/chat/completions`. Built-in presets:
+  - Groq · `llama-3.3-70b-versatile`
+  - OpenRouter · `google/gemini-2.5-flash-lite`
+  - DeepSeek · `deepseek-chat`
+  - Cerebras · `gpt-oss-120b`
   - Together AI
   - Fireworks
-  - Custom (any URL — needs you to grant the host permission via Chrome)
+  - Custom (any URL whose API allows browser requests from linkedin.com)
+
+Once a key is in, Settings lists the models that key can use, grouped cheapest first. Where the provider publishes prices (OpenRouter, Cerebras) each model shows its cost per post. **Use recommended** switches back to the preset's own default, a cheap model rather than the lowest price on the list. Settings also shows the exact URL and model every request goes to, and **Test connection** sends one real request and reports which model answered.
 
 Same modal, same cache, same prompt — just point it at whichever API you have a key for.
 
@@ -56,7 +58,7 @@ pnpm dev                     # live-reload Chrome extension
 pnpm test                    # vitest
 pnpm compile                 # tsc --noEmit
 pnpm build                   # production build → .output/chrome-mv3
-pnpm zip                     # .output/scrollsaber-0.1.0-chrome.zip
+pnpm zip                     # .output/scrollsaber-0.1.1-chrome.zip
 ```
 
 Load the unpacked extension from `.output/chrome-mv3` in `chrome://extensions`.
@@ -71,7 +73,7 @@ Open the options page (toolbar icon → gear). Drop in a key:
 - DeepSeek: <https://platform.deepseek.com/api_keys>
 - …or any OpenAI-compatible endpoint
 
-Pick provider, optional language, accent color, daily credit cap, reader-mode threshold. "Test connection" verifies it before you rely on it.
+Pick provider and model, optional language, accent color, daily credit cap, reader-mode threshold. "Test connection" sends one real request to the selected model before you rely on it.
 
 ## Keyboard shortcut
 

@@ -1,4 +1,9 @@
-import { LLMError, type ShortenRequest, type ShortenResult } from '@/lib/types';
+import {
+  LLMError,
+  type ProviderTestResult,
+  type ShortenRequest,
+  type ShortenResult,
+} from '@/lib/types';
 import { creditsFromTokens } from '@/lib/credits/policy';
 import { buildSystemPrompt, buildUserMessage } from './prompt';
 import { validateShortenResponse } from './validator';
@@ -15,6 +20,7 @@ interface ChatUsage {
 }
 
 interface ChatResponse {
+  model?: string;
   choices?: Array<{ message?: ChatMessage; finish_reason?: string }>;
   usage?: ChatUsage;
   error?: { message?: string; type?: string };
@@ -27,7 +33,11 @@ export interface OpenAIConfig {
 }
 
 function trimBaseUrl(url: string): string {
-  return url.replace(/\/+$/, '');
+  return url.trim().replace(/\/+$/, '');
+}
+
+export function chatEndpoint(baseUrl: string): string {
+  return `${trimBaseUrl(baseUrl)}/chat/completions`;
 }
 
 function extractJson(text: string): unknown {
@@ -85,21 +95,19 @@ export async function callOpenAI(
     ],
   };
 
-  const url = `${trimBaseUrl(cfg.baseUrl)}/chat/completions`;
   let res: Response;
   try {
-    res = await fetch(url, {
+    res = await fetch(chatEndpoint(cfg.baseUrl), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // Some local servers (Ollama) ignore the Authorization header but
-        // accept any value, so always send it.
-        Authorization: `Bearer ${cfg.apiKey || 'no-key'}`,
+        Authorization: `Bearer ${cfg.apiKey.trim()}`,
       },
       body: JSON.stringify(body),
       signal,
     });
   } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') throw e;
     const msg = e instanceof Error ? e.message : 'network error';
     throw new LLMError('network', `Network error contacting provider: ${msg}`);
   }
@@ -138,18 +146,45 @@ export async function callOpenAI(
   };
 }
 
-export async function testOpenAIKey(cfg: OpenAIConfig): Promise<{ ok: boolean; error?: string }> {
+/**
+ * Sends one minimal chat call to the selected model, so a dead or misspelled
+ * model id fails here instead of on the first LinkedIn post.
+ */
+export async function testOpenAIKey(cfg: OpenAIConfig): Promise<ProviderTestResult> {
   if (!cfg.baseUrl.trim()) return { ok: false, error: 'No base URL' };
+  if (!cfg.model.trim()) return { ok: false, error: 'No model selected' };
+  const started = Date.now();
   try {
-    const res = await fetch(`${trimBaseUrl(cfg.baseUrl)}/models`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${cfg.apiKey || 'no-key'}` },
+    const res = await fetch(chatEndpoint(cfg.baseUrl), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cfg.apiKey.trim()}`,
+      },
+      body: JSON.stringify({
+        model: cfg.model.trim(),
+        // Same JSON mode as the real call, so a model without it fails here.
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: 'Reply with this JSON: {"ok":true}' }],
+        max_tokens: 16,
+      }),
     });
-    if (res.ok) return { ok: true };
+    const latencyMs = Date.now() - started;
+    let json: ChatResponse = {};
+    try {
+      json = (await res.json()) as ChatResponse;
+    } catch {
+      /* status alone is enough to report */
+    }
+    if (res.ok) return { ok: true, servedModel: json.model ?? cfg.model, latencyMs };
+    const detail = json.error?.message?.split('\n')[0]?.slice(0, 160);
     if (res.status === 401 || res.status === 403) {
       return { ok: false, error: 'Key rejected by provider' };
     }
-    return { ok: false, error: `Provider responded ${res.status}` };
+    if (res.status === 404) {
+      return { ok: false, error: detail ? `Model unavailable: ${detail}` : 'Model or URL not found' };
+    }
+    return { ok: false, error: `Provider ${res.status}${detail ? `: ${detail}` : ''}` };
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'network error';
     return { ok: false, error: msg };

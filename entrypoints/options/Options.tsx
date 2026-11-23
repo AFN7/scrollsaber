@@ -10,13 +10,18 @@ import { resetStats } from '@/lib/storage/stats';
 import { clearCache } from '@/lib/storage/cache';
 import { testProvider } from '@/lib/llm/client';
 import { OPENAI_PRESETS, findPreset } from '@/lib/llm/presets';
-import type { Settings } from '@/lib/types';
+import { geminiEndpoint } from '@/lib/llm/gemini';
+import { chatEndpoint } from '@/lib/llm/openai';
+import { DEFAULT_GEMINI_MODEL, listGeminiModels, listOpenAIModels } from '@/lib/llm/models';
+import { activeModel, providerReady } from '@/lib/storage/settings';
+import type { ProviderTestResult, Settings } from '@/lib/types';
+import { ModelPicker } from './ModelPicker';
 import { cn } from '@/lib/utils/cn';
 
 type TestState =
   | { kind: 'idle' }
   | { kind: 'loading' }
-  | { kind: 'ok'; detail?: string }
+  | { kind: 'ok'; result: ProviderTestResult }
   | { kind: 'err'; message: string };
 
 export function Options() {
@@ -25,6 +30,12 @@ export function Options() {
   const [savedAt, setSavedAt] = React.useState<number | null>(null);
   const [testState, setTestState] = React.useState<TestState>({ kind: 'idle' });
   const saveTimer = React.useRef<number | null>(null);
+  // Edits inside one debounce window are merged, so a second field changed
+  // within 250 ms does not drop the first from storage.
+  const pending = React.useRef<Partial<Settings>>({});
+  // Bumped whenever the tested config changes, so a test that was still in
+  // flight cannot report its result under a different model or key.
+  const testSeq = React.useRef(0);
 
   React.useEffect(() => {
     getSettings().then((s) => {
@@ -34,20 +45,51 @@ export function Options() {
   }, []);
 
   function commit(next: Partial<Settings>) {
-    const merged = { ...settings, ...next };
-    setSettingsLocal(merged);
+    setSettingsLocal((prev) => ({ ...prev, ...next }));
+    pending.current = { ...pending.current, ...next };
+    // Any change to provider, key, URL or model makes the last test result stale.
+    if (
+      'provider' in next ||
+      'geminiApiKey' in next ||
+      'geminiModel' in next ||
+      'openaiBaseUrl' in next ||
+      'openaiApiKey' in next ||
+      'openaiModel' in next
+    ) {
+      testSeq.current += 1;
+      setTestState({ kind: 'idle' });
+    }
     if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
-      setSettings(next).then(() => setSavedAt(Date.now()));
+      const batch = pending.current;
+      pending.current = {};
+      setSettings(batch).then(() => setSavedAt(Date.now()));
     }, 250);
   }
 
   async function onTest() {
+    const seq = ++testSeq.current;
     setTestState({ kind: 'loading' });
     const result = await testProvider(settings.provider, settings);
-    if (result.ok) setTestState({ kind: 'ok' });
+    if (seq !== testSeq.current) return;
+    if (result.ok) setTestState({ kind: 'ok', result });
     else setTestState({ kind: 'err', message: result.error ?? 'Unknown error' });
   }
+
+  const geminiKey = settings.geminiApiKey.trim();
+  const loadGemini = React.useMemo(
+    () => (geminiKey ? (signal: AbortSignal) => listGeminiModels(geminiKey, signal) : null),
+    [geminiKey],
+  );
+  const openaiBase = settings.openaiBaseUrl.trim();
+  const openaiKey = settings.openaiApiKey.trim();
+  const loadOpenAI = React.useMemo(
+    () =>
+      openaiBase && openaiKey
+        ? (signal: AbortSignal) => listOpenAIModels(openaiBase, openaiKey, signal)
+        : null,
+    [openaiBase, openaiKey],
+  );
 
   function applyPreset(presetId: string) {
     const preset = findPreset(presetId);
@@ -71,10 +113,7 @@ export function Options() {
     );
   }
 
-  const hasKey =
-    settings.provider === 'gemini'
-      ? settings.geminiApiKey.trim().length > 0
-      : settings.openaiBaseUrl.trim().length > 0 && settings.openaiModel.trim().length > 0;
+  const hasKey = providerReady(settings, settings.provider);
   const activePreset = findPreset(settings.openaiPreset) ?? OPENAI_PRESETS[0];
 
   return (
@@ -131,10 +170,20 @@ export function Options() {
         >
           <div className="flex flex-col gap-3">
             <KeyInput
-              placeholder="AIza…"
+              placeholder="AIza… or AQ.…"
               value={settings.geminiApiKey}
-              onChange={(v) => commit({ geminiApiKey: v })}
+              onChange={(v) => commit({ geminiApiKey: v.trim() })}
             />
+            <ModelPicker
+              value={settings.geminiModel}
+              onChange={(id) => commit({ geminiModel: id })}
+              load={loadGemini}
+              autoKey={geminiKey}
+              targetKey="gemini"
+              missingHint="Paste a key to see the models it can use."
+              preferredId={DEFAULT_GEMINI_MODEL}
+            />
+            <RequestTarget url={geminiEndpoint(activeModel(settings, 'gemini'))} />
             <TestRow hasKey={hasKey} testState={testState} onTest={onTest} />
           </div>
         </Section>
@@ -190,25 +239,28 @@ export function Options() {
                 className="w-full rounded-md border border-border bg-secondary px-3 py-2 font-mono text-sm"
               />
             </Field>
-            <Field label="Model">
-              <input
-                type="text"
-                spellCheck={false}
-                placeholder="model-id"
-                value={settings.openaiModel}
-                onChange={(e) =>
-                  commit({ openaiModel: e.target.value, openaiPreset: settings.openaiPreset })
-                }
-                className="w-full rounded-md border border-border bg-secondary px-3 py-2 font-mono text-sm"
-              />
-            </Field>
             <Field label="API key" hint={`Format hint: ${activePreset.keyHint}`}>
               <KeyInput
                 placeholder={activePreset.keyHint}
                 value={settings.openaiApiKey}
-                onChange={(v) => commit({ openaiApiKey: v })}
+                onChange={(v) => commit({ openaiApiKey: v.trim() })}
               />
             </Field>
+            <ModelPicker
+              value={settings.openaiModel}
+              onChange={(id) => commit({ openaiModel: id })}
+              load={loadOpenAI}
+              autoKey={openaiKey}
+              targetKey={openaiBase}
+              missingHint="Enter the base URL and key to see the models this provider offers."
+              preferredId={activePreset.id === 'custom' ? undefined : activePreset.defaultModel}
+            />
+            {settings.openaiBaseUrl.trim() && (
+              <RequestTarget
+                url={chatEndpoint(settings.openaiBaseUrl)}
+                model={activeModel(settings, 'openai')}
+              />
+            )}
             <TestRow hasKey={hasKey} testState={testState} onTest={onTest} />
           </div>
         </Section>
@@ -432,7 +484,11 @@ function TestRow({
       </Button>
       {testState.kind === 'ok' && (
         <span className="inline-flex items-center gap-1 text-xs text-emerald-300">
-          <CheckCircle2 className="h-4 w-4" /> Works
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span>
+            Works · answered by <code>{testState.result.servedModel}</code>
+            {testState.result.latencyMs !== undefined && ` in ${testState.result.latencyMs} ms`}
+          </span>
         </span>
       )}
       {testState.kind === 'err' && (
@@ -440,6 +496,19 @@ function TestRow({
           <XCircle className="h-4 w-4" /> {testState.message}
         </span>
       )}
+    </div>
+  );
+}
+
+/** The exact URL (and model, when it is not in the URL) each LinkedIn request goes to. */
+function RequestTarget({ url, model }: { url: string; model?: string }) {
+  return (
+    <div className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs">
+      <span className="text-muted-foreground">Each shortening sends the post to</span>
+      <div className="mt-0.5 break-all font-mono">
+        POST {url}
+        {model && <span className="text-muted-foreground"> · model {model}</span>}
+      </div>
     </div>
   );
 }

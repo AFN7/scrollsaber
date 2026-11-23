@@ -1,21 +1,17 @@
 /**
- * Tiny, prefixed logger. On by default during iteration — flip the global
- * flag below to false before shipping a production build.
+ * Prefixed logger. Verbose output is on under `wxt` dev and off in production;
+ * set window.__SCROLLSABER_DEBUG__ = true in the console to turn it on there.
+ * Errors always log.
  *
  * Never pass post content or API keys through these helpers. Only sizes,
  * counts, state names, selector matches, durations.
  */
 const PREFIX = '[Scrollsaber]';
 
-// Toggle-friendly: set window.__SCROLLSABER_DEBUG__ = false in the console to
-// silence at runtime without rebuild.
 const win = globalThis as unknown as { __SCROLLSABER_DEBUG__?: boolean };
-if (win.__SCROLLSABER_DEBUG__ === undefined) {
-  win.__SCROLLSABER_DEBUG__ = true;
-}
 
 function enabled(): boolean {
-  return win.__SCROLLSABER_DEBUG__ !== false;
+  return win.__SCROLLSABER_DEBUG__ ?? import.meta.env.COMMAND === 'serve';
 }
 
 export function log(...args: unknown[]): void {

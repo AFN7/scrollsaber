@@ -22,10 +22,10 @@ export const OPENAI_PRESETS: OpenAIPreset[] = [
     id: 'openrouter',
     label: 'OpenRouter',
     baseUrl: 'https://openrouter.ai/api/v1',
-    defaultModel: 'meta-llama/llama-3.3-70b-instruct:free',
+    defaultModel: 'google/gemini-2.5-flash-lite',
     keyHint: 'sk-or-…',
     keyUrl: 'https://openrouter.ai/keys',
-    notes: '100+ models behind one key (free + paid)',
+    notes: 'Hundreds of models behind one key, prices shown per post',
   },
   {
     id: 'deepseek',
@@ -40,7 +40,7 @@ export const OPENAI_PRESETS: OpenAIPreset[] = [
     id: 'cerebras',
     label: 'Cerebras',
     baseUrl: 'https://api.cerebras.ai/v1',
-    defaultModel: 'llama-3.3-70b',
+    defaultModel: 'gpt-oss-120b',
     keyHint: 'csk-…',
     keyUrl: 'https://cloud.cerebras.ai',
     notes: 'Fastest inference, generous free tier',
@@ -72,6 +72,16 @@ export const OPENAI_PRESETS: OpenAIPreset[] = [
     notes: 'Any OpenAI-compatible endpoint',
   },
 ];
+
+/**
+ * Preset defaults the provider has since removed, keyed `preset:model`, with
+ * the model stored settings move to. Only exact old defaults are listed, so
+ * a model the user picked by hand is left alone.
+ */
+export const RETIRED_PRESET_MODELS: Record<string, string> = {
+  'openrouter:meta-llama/llama-3.3-70b-instruct:free': 'google/gemini-2.5-flash-lite',
+  'cerebras:llama-3.3-70b': 'gpt-oss-120b',
+};
 
 export function findPreset(id: string): OpenAIPreset | undefined {
   return OPENAI_PRESETS.find((p) => p.id === id);

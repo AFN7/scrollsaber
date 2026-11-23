@@ -7,7 +7,7 @@ export default defineConfig({
   manifest: {
     name: 'Scrollsaber',
     description: 'Cut long posts. Keep the point. LinkedIn shortening with AI (BYOK).',
-    version: '0.1.0',
+    version: '0.1.1',
     permissions: ['storage'],
     // Each entry shows up in the install prompt. Curated to the providers
     // we ship presets for. Custom URLs are accepted in Settings but only

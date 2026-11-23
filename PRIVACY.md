@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Effective date:** 2026-05-05
+**Effective date:** 2026-11-23
 **Extension:** Scrollsaber (Chrome MV3)
 **Maintainer:** Afan Selçuk
 
@@ -29,13 +29,14 @@ When the user clicks the Scrollsaber button to shorten a post (or when the reade
 - The user's API key (in the request headers or URL, as required by the provider)
 - A small system prompt telling the model how to format its output
 
-The destination of that request is whichever provider the user picked — for example `generativelanguage.googleapis.com` for Gemini, `api.groq.com` for Groq, `openrouter.ai` for OpenRouter, etc. That request is governed by **the privacy policy of the provider the user chose**, not by the maintainer of Scrollsaber. Scrollsaber does not see, log, intercept, or proxy this traffic.
+The Settings page also contacts that provider, with the user's key and no post text, in two cases: to list the models the key can use (after the key is entered or when the user presses Refresh), and when the user presses "Test connection", which sends one short fixed prompt to the selected model.
+
+The destination of these requests is whichever provider the user picked, for example `generativelanguage.googleapis.com` for Gemini, `api.groq.com` for Groq, `openrouter.ai` for OpenRouter, etc. That request is governed by **the privacy policy of the provider the user chose**, not by the maintainer of Scrollsaber. Scrollsaber does not see, log, intercept, or proxy this traffic.
 
 ## Permissions explained
 
 - `storage` — stores settings, stats, and cache locally as described above.
-- Host permissions for the bundled providers — required for the extension to make API requests directly from the browser to the chosen LLM provider.
-- Optional host permissions (`https://*/*`, `http://*/*`) — granted only when the user explicitly enters a custom OpenAI-compatible URL and accepts Chrome's permission prompt. Chrome itself shows the prompt before the extension can reach that URL.
+- Host permissions for the bundled providers: required for the extension to make API requests directly from the browser to the chosen LLM provider. Scrollsaber requests no other host permissions; a custom OpenAI-compatible URL works only if that server accepts browser requests.
 
 ## Data sale
 

@@ -21,5 +21,5 @@
     "**/*.tsx",
     ".wxt/types/**/*.d.ts"
   ],
-  "exclude": ["node_modules", ".output", ".wxt/chrome-mv3", "server"]
+  "exclude": ["node_modules", ".output", ".wxt/chrome-mv3", "server", "scripts"]
 }

@@ -52,6 +52,8 @@ export interface Settings {
   provider: Provider;
   /** Gemini API key (Google AI Studio). */
   geminiApiKey: string;
+  /** Gemini model id, without the `models/` prefix. */
+  geminiModel: string;
   /** OpenAI-compatible base URL (Groq, OpenRouter, DeepSeek, etc.). No trailing slash. */
   openaiBaseUrl: string;
   /** API key for the OpenAI-compatible endpoint. */
@@ -103,9 +105,12 @@ export interface CacheEntry {
   expiresAt: number;
 }
 
-export interface LLMProvider {
-  shorten(req: ShortenRequest): Promise<ShortenResult>;
-  testKey(): Promise<{ ok: boolean; error?: string }>;
+export interface ProviderTestResult {
+  ok: boolean;
+  error?: string;
+  /** Model id the provider reports as having served the call. */
+  servedModel?: string;
+  latencyMs?: number;
 }
 
 export type LLMErrorCode =
