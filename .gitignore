@@ -44,3 +44,6 @@ scripts/
 store-assets/*.png
 store-assets/screenshots/
 !store-assets/scrollsaber-demo.gif
+
+# Playwright MCP snapshots and logs
+.playwright-mcp/
